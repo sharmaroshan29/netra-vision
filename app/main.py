@@ -37,7 +37,12 @@ async def root():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Specific frontend can be restricted
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://netra-vision.vercel.app"
+
+    ],  # Specific frontend can be restricted
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
