@@ -63,6 +63,35 @@ export default function App() {
     }
   };
 
+  // const processFile = async (file) => {
+  //   if (!file || !file.type.startsWith("image/")) {
+  //     showToast("Please upload a valid image file", "error");
+  //     return;
+  //   }
+
+  //   setSelectedRecordId(null);
+  //   setSelectedImage(URL.createObjectURL(file));
+  //   setIsAnalyzing(true);
+  //   setDiagnosis(null);
+
+  //   const formData = new FormData();
+  //   formData.append("file", file);
+
+  //   try {
+  //     const res = await axios.post(`${API_BASE}/analyse`, formData, {
+  //       headers: { "Content-Type": "multipart/form-data" }
+  //     });
+  //     setDiagnosis(res.data.diagnosis ? res.data.diagnosis : res.data);
+  //     showToast("Specimen synthesized successfully", "success");
+  //     fetchHistory();
+  //   } catch (error) {
+  //     console.error("Analysis failed", error);
+  //     showToast("Analysis engine failed to process image", "error");
+  //   } finally {
+  //     setIsAnalyzing(false);
+  //   }
+  // };
+
   const processFile = async (file) => {
     if (!file || !file.type.startsWith("image/")) {
       showToast("Please upload a valid image file", "error");
@@ -78,12 +107,49 @@ export default function App() {
     formData.append("file", file);
 
     try {
-      const res = await axios.post(`${API_BASE}/analyse`, formData, {
+      // Added a trailing slash to prevent FastAPI 307 Redirects
+      const res = await axios.post(`${API_BASE}/analyse/`, formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
-      setDiagnosis(res.data.diagnosis ? res.data.diagnosis : res.data);
+      
+      let responseData = res.data;
+      let extractedDiagnosis = null;
+
+      // Parse stringified JSON if the backend double-encoded it
+      if (typeof responseData === 'string') {
+        try { responseData = JSON.parse(responseData); } catch(e) {}
+      }
+
+      // Scenario A: Backend returned the full database record
+      if (responseData && responseData.diagnosis) {
+        extractedDiagnosis = responseData.diagnosis;
+        if (responseData.image_url) {
+          setSelectedImage(getValidImageUrl(responseData.image_url));
+          if (responseData._id) setSelectedRecordId(responseData._id);
+        }
+      } 
+      // Scenario B: Backend returned just the raw LLM output
+      else if (responseData && (responseData["crop detected"] || responseData.crop_detected)) {
+        extractedDiagnosis = responseData;
+      }
+
+      // SAFETY FALLBACK: If the POST response was empty/unexpected, 
+      // fetch the newest record from the database since we know GET works.
+      if (!extractedDiagnosis) {
+        const historyRes = await axios.get(`${API_BASE}/analyse/`);
+        const latestHistory = Array.isArray(historyRes.data) ? historyRes.data : (historyRes.data.history || []);
+        
+        if (latestHistory.length > 0) {
+          extractedDiagnosis = latestHistory[0].diagnosis;
+          setSelectedImage(getValidImageUrl(latestHistory[0].image_url));
+          setSelectedRecordId(latestHistory[0]._id);
+        }
+      }
+
+      setDiagnosis(extractedDiagnosis);
       showToast("Specimen synthesized successfully", "success");
-      fetchHistory();
+      fetchHistory(); // Refresh the bottom timeline
+
     } catch (error) {
       console.error("Analysis failed", error);
       showToast("Analysis engine failed to process image", "error");
@@ -189,7 +255,7 @@ export default function App() {
                 {isAnalyzing && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
                     <ScanLine className="text-amber-400 animate-bounce mb-4" size={56} strokeWidth={1.5} />
-                    <span className="text-amber-400/90 tracking-widest uppercase text-sm font-medium animate-pulse">Analyzing Cellular Anomalies...</span>
+                    <span className="text-amber-400/90 tracking-widest uppercase text-sm font-medium animate-pulse">Analyzing Image...</span>
                   </div>
                 )}
                 {!isAnalyzing && (
