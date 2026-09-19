@@ -1,0 +1,16 @@
+# Environments
+.env
+app/.env
+netra-vision/.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Node
+netra-vision/node_modules/
+netra-vision/dist/
+
+# Local Uploads
+app/uploads/
