@@ -3,6 +3,7 @@
 Netra Vision is an AI-powered agricultural telemetry application designed to detect crop diseases and recommend actionable treatments. By leveraging a multimodal Large Language Model (LLM) and an asynchronous cloud backend, the system analyzes raw botanical imagery, extracts structured health diagnostics, and maintains a persistent chronological archive of crop telemetry.
 
 **Live Demo:** https://netra-vision.vercel.app/
+
 **API Endpoint:** https://netra-vision-crop-disease-management.onrender.com/
 
 ---
