@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from dotenv import load_dotenv
-from fastapi.staticfiles import StaticFiles
+# from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -33,7 +33,7 @@ async def root():
 
 
 
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,
